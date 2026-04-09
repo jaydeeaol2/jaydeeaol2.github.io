@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Building Tour</title>
+<style>
+  :root {
+    --bg: #f5f5f0;
+    --surface: #ffffff;
+    --border: #e0ddd6;
+    --accent: #CC0000;
+    --accent2: #990000;
+    --text: #1a1a1a;
+    --muted: #666;
+    --green: #166534;
+    --green-bg: #dcfce7;
+    --yellow: #854d0e;
+    --yellow-bg: #fef9c3;
+    --red: #991b1b;
+    --red-bg: #fee2e2;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── App shell ── */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── Header ── */
+  .header {
+    background: var(--accent);
+    color: white;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-left { display: flex; flex-direction: column; }
+  .header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-sub { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .progress-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .export-btn {
+    background: white;
+    color: var(--accent);
+    border: none;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .export-btn:active { opacity: 0.8; }
+
+  /* ── Progress bar ── */
+  .progress-bar-wrap { height: 3px; background: rgba(204,0,0,0.3); }
+  .progress-bar { height: 100%; background: white; transition: width 0.4s; }
+
+  /* ── Content ── */
+  .content { display: flex; flex: 1; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 190px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    position: sticky;
+    top: 51px;
+    height: calc(100vh - 54px);
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 12px 6px;
+  }
+  .dept-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 9px 12px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .dept-btn:hover { background: var(--bg); }
+  .dept-btn.active { background: #fff5f5; color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); padding-left: 9px; }
+  .dept-btn.done { color: var(--text); }
+  .dept-check { font-size: 11px; flex-shrink: 0; }
+  .dept-name { flex: 1; line-height: 1.3; }
+  .dept-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-G { background: #22c55e; }
+  .dot-Y { background: #eab308; }
+  .dot-R { background: #ef4444; }
+
+  /* ── Main panel ── */
+  .panel { flex: 1; padding: 20px; max-width: 720px; }
+
+  .dept-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+  .dept-card-header {
+    background: var(--accent);
+    color: white;
+    padding: 14px 18px;
+  }
+  .dept-card-header h2 { font-size: 17px; font-weight: 700; }
+  .dept-card-header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+  .dept-card-body { padding: 18px; display: flex; flex-direction: column; gap: 18px; }
+
+  .field-block { display: flex; flex-direction: column; gap: 8px; }
+  .field-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Rating buttons */
+  .rating-row { display: flex; gap: 8px; }
+  .r-btn {
+    flex: 1;
+    padding: 11px 6px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .r-btn .r-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .r-btn:active { transform: scale(0.97); }
+  .r-btn.sel-G { border-color: #22c55e; background: var(--green-bg); color: var(--green); }
+  .r-btn.sel-Y { border-color: #eab308; background: var(--yellow-bg); color: var(--yellow); }
+  .r-btn.sel-R { border-color: #ef4444; background: var(--red-bg); color: var(--red); }
+  .r-btn .r-dot-G { background: #22c55e; }
+  .r-btn .r-dot-Y { background: #eab308; }
+  .r-btn .r-dot-R { background: #ef4444; }
+
+  textarea {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); background: white; }
+  textarea::placeholder { color: #aaa; }
+
+  /* Nav footer */
+  .nav-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    gap: 10px;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:active:not(:disabled) { transform: scale(0.97); }
+  .nav-btn.primary { background: var(--accent); border-color: var(--accent2); color: white; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+    z-index: 1000;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── PRINT / PDF styles ── */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    .header, .sidebar, .nav-footer, .toast, .no-print { display: none !important; }
+    .content { display: block; }
+    .panel { max-width: 100%; padding: 0; }
+
+    .print-page {
+      page-break-before: always;
+    }
+    .print-page:first-child { page-break-before: avoid; }
+
+    body { background: white; font-size: 11pt; }
+
+    .print-header {
+      display: block !important;
+      text-align: center;
+      margin-bottom: 18pt;
+      padding-bottom: 10pt;
+      border-bottom: 2pt solid #CC0000;
+    }
+    .print-header h1 { font-size: 22pt; color: #CC0000; font-weight: 800; }
+    .print-header p { font-size: 10pt; color: #666; margin-top: 3pt; }
+
+    .print-section {
+      display: block !important;
+      margin-bottom: 14pt;
+      break-inside: avoid;
+    }
+    .print-section-header {
+      background: #CC0000 !important;
+      color: white !important;
+      padding: 6pt 10pt;
+      font-size: 12pt;
+      font-weight: 700;
+      border-radius: 4pt 4pt 0 0;
+    }
+    .print-section-body {
+      border: 1pt solid #ddd;
+      border-top: none;
+      border-radius: 0 0 4pt 4pt;
+      padding: 8pt 10pt;
+    }
+    .print-rating {
+      display: inline-block;
+      padding: 3pt 10pt;
+      border-radius: 20pt;
+      font-size: 10pt;
+      font-weight: 700;
+      margin-bottom: 6pt;
+    }
+    .print-rating-G { background: #dcfce7; color: #166534; }
+    .print-rating-Y { background: #fef9c3; color: #854d0e; }
+    .print-rating-R { background: #fee2e2; color: #991b1b; }
+    .print-rating-none { background: #f3f4f6; color: #6b7280; }
+    .print-cols { display: flex; gap: 16pt; }
+    .print-col { flex: 1; }
+    .print-col-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5pt; color: #888; margin-bottom: 3pt; }
+    .print-col-value { font-size: 10pt; color: #1a1a1a; line-height: 1.5; white-space: pre-wrap; min-height: 14pt; }
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 500px) {
+    .sidebar { display: none; }
+  }
+  @media (max-width: 380px) {
+    .header-title { font-size: 16px; }
+    .export-btn { font-size: 12px; padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">🏬 Building Tour</div>
+      <div class="header-sub">Target Property Management</div>
+    </div>
+    <div class="header-right">
+      <div class="progress-badge" id="progressBadge">0 / 25</div>
+      <button class="export-btn" onclick="exportPDF()">Export PDF ↓</button>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+
+  <!-- Body -->
+  <div class="content">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-label">Departments</div>
+      <div id="sidebarList"></div>
+    </div>
+
+    <!-- Main panel -->
+    <div class="panel">
+      <div class="dept-card" id="deptCard"></div>
+    </div>
+  </div>
+
+  <!-- Nav footer -->
+  <div class="nav-footer no-print">
+    <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← Prev</button>
+    <button class="nav-btn primary" id="nextBtn" onclick="navigate(1)">Next →</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden print container -->
+<div id="printContainer" style="display:none;"></div>
+
+<script>
+const SECTIONS = [
+  "First Impression","Checkout","Parking Lot","Restrooms","Café",
+  "Softline's","Fitting Room","Shoes","Baby","Sporting Goods",
+  "Toys","Chemicals","Hardware","Seasonal","Storage","Center Pads",
+  "Tech","Beauty","Grooming","OTC","Grocery","Stationary",
+  "Party Supplies","Backroom","Loading Dock"
+];
+
+const RATING_DEPTS = new Set([
+  "First Impression","Café","Softline's","Tech","Beauty","Grocery","Backroom"
+]);
+
+const store = {};
+SECTIONS.forEach(s => { store[s] = { wins: '', opportunity: '', rating: null }; });
+
+let current = 0;
+
+function isComplete(name) {
+  const d = store[name];
+  if (RATING_DEPTS.has(name) && !d.rating) return false;
+  return (d.wins||'').trim() || (d.opportunity||'').trim();
+}
+
+function updateProgress() {
+  const done = SECTIONS.filter(isComplete).length;
+  const pct = Math.round(done / SECTIONS.length * 100);
+  document.getElementById('progressBadge').textContent = `${done} / ${SECTIONS.length}`;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function buildSidebar() {
+  const list = document.getElementById('sidebarList');
+  list.innerHTML = SECTIONS.map((s, i) => {
+    const done = isComplete(s);
+    const r = store[s].rating;
+    const dot = r ? `<span class="dept-dot dot-${r}"></span>` : '';
+    const check = done ? '✓' : '○';
+    const cls = [
+      'dept-btn',
+      i === current ? 'active' : '',
+      done ? 'done' : ''
+    ].filter(Boolean).join(' ');
+    return `<button class="${cls}" onclick="goTo(${i})">
+      <span class="dept-check">${check}</span>
+      <span class="dept-name">${s}</span>
+      ${dot}
+    </button>`;
+  }).join('');
+}
+
+function buildCard() {
+  const name = SECTIONS[current];
+  const data = store[name];
+  const hasRating = RATING_DEPTS.has(name);
+
+  let ratingHTML = '';
+  if (hasRating) {
+    const opts = [
+      { key: 'G', label: 'Green', color: '#22c55e' },
+      { key: 'Y', label: 'Yellow', color: '#eab308' },
+      { key: 'R', label: 'Red', color: '#ef4444' },
+    ];
+    ratingHTML = `
+      <div class="field-block">
+        <div class="field-lbl">Business Walk Rating</div>
+        <div class="rating-row">
+          ${opts.map(o => `
+            <button class="r-btn ${data.rating === o.key ? 'sel-'+o.key : ''}"
+                    onclick="setRating('${name}','${o.key}')">
+              <span class="r-dot r-dot-${o.key}"></span>
+              ${o.label}
+            </button>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('deptCard').innerHTML = `
+    <div class="dept-card-header">
+      <h2>${name}</h2>
+      <p>Department ${current+1} of ${SECTIONS.length}</p>
+    </div>
+    <div class="dept-card-body">
+      ${ratingHTML}
+      <div class="field-block">
+        <div class="field-lbl">✓ Wins</div>
+        <textarea id="wins-field" placeholder="What's going well in this department?"
+          onchange="saveField('${name}')" oninput="saveField('${name}')">${escHtml(data.wins)}</textarea>
+      </div>
+      <div class="field-block">
+        <div class="field-lbl">⚡ Opportunity</div>
+        <textarea id="opp-field" placeholder="What needs improvement?"
+          onchange="saveField('${name}')" oninput="saveField('${name}')">${escHtml(data.opportunity)}</textarea>
+      </div>
+    </div>`;
+
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').textContent = current === SECTIONS.length - 1 ? 'Finish ✓' : 'Next →';
+  document.getElementById('deptCard').scrollIntoView({block:'start',behavior:'smooth'});
+}
+
+function saveField(name) {
+  store[name].wins = document.getElementById('wins-field')?.value || '';
+  store[name].opportunity = document.getElementById('opp-field')?.value || '';
+  buildSidebar();
+  updateProgress();
+}
+
+function setRating(name, val) {
+  store[name].rating = store[name].rating === val ? null : val;
+  buildCard();
+  buildSidebar();
+  updateProgress();
+}
+
+function navigate(dir) {
+  saveField(SECTIONS[current]);
+  const next = current + dir;
+  if (next < 0 || next >= SECTIONS.length) return;
+  current = next;
+  buildCard();
+  buildSidebar();
+  window.scrollTo(0, 0);
+}
+
+function goTo(idx) {
+  saveField(SECTIONS[current]);
+  current = idx;
+  buildCard();
+  buildSidebar();
+  window.scrollTo(0, 0);
+  // scroll active dept into view in sidebar
+  setTimeout(() => {
+    const active = document.querySelector('.dept-btn.active');
+    if (active) active.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }, 50);
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function exportPDF() {
+  // Save current field first
+  saveField(SECTIONS[current]);
+
+  const today = new Date().toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'});
+  const done = SECTIONS.filter(isComplete).length;
+
+  // Build print-only content
+  const pc = document.getElementById('printContainer');
+  pc.innerHTML = `
+    <div class="print-header">
+      <h1>Building Tour</h1>
+      <p>Date: ${today} &nbsp;|&nbsp; ${done} of ${SECTIONS.length} departments completed</p>
+    </div>
+    ${SECTIONS.map((name, i) => {
+      const d = store[name];
+      const hasR = RATING_DEPTS.has(name);
+      let ratingBadge = '';
+      if (hasR) {
+        const rLabel = d.rating === 'G' ? 'Green' : d.rating === 'Y' ? 'Yellow' : d.rating === 'R' ? 'Red' : 'Not Set';
+        const rClass = d.rating ? `print-rating-${d.rating}` : 'print-rating-none';
+        ratingBadge = `<div style="margin-bottom:6pt"><span class="print-rating ${rClass}">● Business Walk Rating: ${rLabel}</span></div>`;
+      }
+      return `
+        <div class="print-section ${i > 0 ? '' : ''}">
+          <div class="print-section-header">${name}</div>
+          <div class="print-section-body">
+            ${ratingBadge}
+            <div class="print-cols">
+              <div class="print-col">
+                <div class="print-col-label">✓ Wins</div>
+                <div class="print-col-value">${escHtml(d.wins) || '<span style="color:#aaa;font-style:italic">None entered</span>'}</div>
+              </div>
+              <div class="print-col">
+                <div class="print-col-label">⚡ Opportunity</div>
+                <div class="print-col-value">${escHtml(d.opportunity) || '<span style="color:#aaa;font-style:italic">None entered</span>'}</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }).join('')}`;
+
+  pc.style.display = 'block';
+  showToast('Opening print dialog — choose "Save as PDF"');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { pc.style.display = 'none'; }, 500);
+  }, 300);
+}
+
+// Init
+buildSidebar();
+buildCard();
+updateProgress();
+</script>
+
+</body>
+</html>

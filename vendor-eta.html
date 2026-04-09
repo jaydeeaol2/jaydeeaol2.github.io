@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vendor ETA">
+<title>Repair Vendor ETA — Target</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #CC0000;
+    --red-dark: #990000;
+    --red-muted: #ff000018;
+    --offwhite: #F8F5F0;
+    --cream: #EDE8E0;
+    --dark: #1A1410;
+    --mid: #6B5E52;
+    --border: #D4C9BB;
+    --success: #2E7D32;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--offwhite);
+    color: var(--dark);
+    min-height: 100vh;
+    font-size: 16px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--dark);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    border-bottom: 3px solid var(--red);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .bullseye { width: 34px; height: 34px; flex-shrink: 0; }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  header p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--dark);
+    border-bottom: 1px solid #333;
+    padding: 0 20px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab.active {
+    color: #fff;
+    border-bottom-color: var(--red);
+  }
+
+  /* ── PANELS ── */
+  .panel { display: none; padding: 20px; padding-bottom: 40px; }
+  .panel.active { display: block; }
+
+  /* ── FORM ELEMENTS ── */
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--red);
+    margin: 24px 0 10px;
+  }
+
+  .section-title:first-child { margin-top: 4px; }
+
+  .field-group { margin-bottom: 14px; }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--mid);
+    margin-bottom: 5px;
+  }
+
+  label .opt { color: var(--border); font-weight: 400; font-size: 0.7rem; }
+  label .req { color: var(--red); }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    background: #fff;
+    color: var(--dark);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px var(--red-muted);
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B5E52' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── REPAIRS TABLE ── */
+  .repairs-table {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .rt-header {
+    display: grid;
+    grid-template-columns: 1fr 100px 36px;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--cream);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mid);
+  }
+
+  .rt-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 36px;
+    gap: 6px;
+    padding: 8px 10px;
+    border-top: 1px solid var(--cream);
+    align-items: center;
+  }
+
+  .rt-row input {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+  }
+
+  .btn-add-row {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px dashed var(--border);
+    border-top: none;
+    background: none;
+    color: var(--mid);
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    border-radius: 0 0 8px 8px;
+    transition: background 0.15s;
+  }
+  .btn-add-row:active { background: var(--cream); }
+
+  .del-btn {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: var(--red);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    border-radius: 5px;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .del-btn:active { background: #fdd; }
+
+  /* ── STATUS CHIPS ── */
+  .chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    font-size: 0.8rem;
+    cursor: pointer;
+    background: #fff;
+    color: var(--mid);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .chip.active { background: var(--red); border-color: var(--red); color: #fff; font-weight: 500; }
+
+  /* ── GENERATE BUTTON ── */
+  .generate-btn {
+    width: 100%;
+    margin-top: 28px;
+    padding: 16px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.18s;
+    -webkit-appearance: none;
+  }
+  .generate-btn:active { background: var(--red-dark); }
+
+  /* ── EMAIL OUTPUT PANEL ── */
+  .email-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--mid);
+  }
+  .email-placeholder svg { opacity: 0.2; margin-bottom: 14px; }
+  .email-placeholder p { font-size: 0.88rem; line-height: 1.6; opacity: 0.7; }
+
+  .email-card {
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .email-meta {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--cream);
+    background: var(--cream);
+  }
+
+  .email-meta-row {
+    display: flex;
+    gap: 8px;
+    font-size: 0.82rem;
+    padding: 3px 0;
+    align-items: baseline;
+  }
+
+  .em-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mid);
+    width: 52px;
+    flex-shrink: 0;
+  }
+
+  .em-value { color: var(--dark); font-weight: 500; flex: 1; word-break: break-all; }
+
+  #emailBody {
+    width: 100%;
+    padding: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: var(--dark);
+    background: var(--offwhite);
+    border: none;
+    min-height: 320px;
+    resize: vertical;
+    outline: none;
+    white-space: pre-wrap;
+    display: block;
+  }
+
+  /* ── ACTION BUTTONS ── */
+  .action-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .action-btn {
+    padding: 13px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s;
+    -webkit-appearance: none;
+  }
+  .action-btn:active { background: var(--cream); }
+  .action-btn.primary { background: var(--dark); color: #fff; border-color: var(--dark); grid-column: 1 / -1; }
+  .action-btn.primary:active { background: #333; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(.22,1,.36,1);
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="bullseye" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="19" cy="19" r="18" fill="#CC0000"/>
+    <circle cx="19" cy="19" r="12" fill="white"/>
+    <circle cx="19" cy="19" r="6" fill="#CC0000"/>
+  </svg>
+  <div>
+    <h1>Vendor ETA Email Generator</h1>
+    <p>Target Property Management Lead</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('form', this)">📋 Details</button>
+  <button class="tab" onclick="switchTab('email', this)">✉️ Email</button>
+</div>
+
+<!-- ═══ FORM TAB ═══ -->
+<div class="panel active" id="tab-form">
+
+  <div class="section-title">Vendor Info</div>
+
+  <div class="field-group">
+    <label>Vendor / Company Name <span class="req">*</span></label>
+    <input type="text" id="vendorName" placeholder="e.g. ABC Facility Services" autocomplete="organization" />
+  </div>
+  <div class="field-group">
+    <label>Contact Name <span class="req">*</span></label>
+    <input type="text" id="contactName" placeholder="e.g. Mike Johnson" autocomplete="name" />
+  </div>
+  <div class="field-group">
+    <label>Vendor Email <span class="opt">(optional)</span></label>
+    <input type="email" id="vendorEmail" placeholder="contact@vendorcompany.com" autocomplete="email" inputmode="email" />
+  </div>
+
+  <div class="section-title">Repair Details</div>
+
+  <div class="repairs-table" id="repairsTable">
+    <div class="rt-header">
+      <span>What needs repairing</span>
+      <span>Work Order #</span>
+      <span></span>
+    </div>
+  </div>
+  <button class="btn-add-row" onclick="addRepairRow()">+ Add repair item</button>
+
+  <div style="margin-top:14px;"></div>
+
+  <div class="field-group">
+    <label>Date Repair Was Requested</label>
+    <input type="date" id="requestDate" />
+  </div>
+  <div class="field-group">
+    <label>Original ETA Given by Vendor <span class="opt">(if provided)</span></label>
+    <input type="date" id="originalEta" />
+  </div>
+
+  <div class="section-title">Current Situation</div>
+
+  <div class="field-group">
+    <label>Status as far as you know</label>
+    <div class="chips">
+      <button class="chip active" data-val="no_update" onclick="setChip(this)">No update yet</button>
+      <button class="chip" data-val="waiting_parts" onclick="setChip(this)">Waiting on parts</button>
+      <button class="chip" data-val="tech_not_scheduled" onclick="setChip(this)">Tech not scheduled</button>
+      <button class="chip" data-val="in_progress" onclick="setChip(this)">Work in progress</button>
+      <button class="chip" data-val="past_eta" onclick="setChip(this)">Past original ETA</button>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Additional Context <span class="opt">(optional)</span></label>
+    <textarea id="extraNotes" placeholder="e.g. Affecting guest-facing areas, HVAC down since Monday..."></textarea>
+  </div>
+
+  <div class="section-title">Your Info</div>
+
+  <div class="field-group">
+    <label>Your Name <span class="req">*</span></label>
+    <input type="text" id="yourName" placeholder="e.g. Maria Lopez" autocomplete="given-name" />
+  </div>
+  <div class="field-group">
+    <label>Store Number</label>
+    <input type="text" id="storeNum" placeholder="e.g. #1234" />
+  </div>
+  <div class="field-group">
+    <label>Street Address</label>
+    <input type="text" id="storeAddress" placeholder="e.g. 123 Main St" autocomplete="street-address" />
+  </div>
+  <div class="field-group">
+    <label>City, State &amp; ZIP</label>
+    <input type="text" id="storeCityStateZip" placeholder="e.g. Chicago, IL 60601" autocomplete="address-level2" />
+  </div>
+
+  <button class="generate-btn" onclick="generateEmail()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+    Generate Email
+  </button>
+</div>
+
+<!-- ═══ EMAIL TAB ═══ -->
+<div class="panel" id="tab-email">
+
+  <div class="email-placeholder" id="emailPlaceholder">
+    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+    <p>Go to the <strong>Details</strong> tab,<br>fill in the form, and tap<br><strong>Generate Email</strong>.</p>
+  </div>
+
+  <div class="email-card" id="emailCard">
+    <div class="email-meta">
+      <div class="email-meta-row">
+        <span class="em-label">To</span>
+        <span class="em-value" id="displayTo"></span>
+      </div>
+      <div class="email-meta-row">
+        <span class="em-label">Subject</span>
+        <span class="em-value" id="displaySubject"></span>
+      </div>
+    </div>
+    <textarea id="emailBody"></textarea>
+  </div>
+
+  <div class="action-bar" id="actionBar" style="display:none;">
+    <button class="action-btn" onclick="copyBody()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Copy Body
+    </button>
+    <button class="action-btn" onclick="copySubjectBody()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 17H5a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v3"/><rect x="11" y="11" width="10" height="10" rx="2"/></svg>
+      Copy All
+    </button>
+    <button class="action-btn primary" onclick="openMailto()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Open in Mail App
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let rowCount = 0;
+  let currentStatus = 'no_update';
+
+  addRepairRow();
+
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function addRepairRow() {
+    rowCount++;
+    const id = rowCount;
+    const row = document.createElement('div');
+    row.className = 'rt-row';
+    row.id = 'rrow-' + id;
+    row.innerHTML = `
+      <input type="text" class="r-desc" placeholder="e.g. HVAC — stockroom" />
+      <input type="text" class="r-wo" placeholder="WO #" inputmode="numeric" />
+      <button class="del-btn" onclick="delRow(${id})">✕</button>
+    `;
+    document.getElementById('repairsTable').appendChild(row);
+  }
+
+  function delRow(id) {
+    const el = document.getElementById('rrow-' + id);
+    if (el) el.remove();
+  }
+
+  function setChip(el) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    currentStatus = el.dataset.val;
+  }
+
+  function fmt(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  function getRepairs() {
+    const rows = document.querySelectorAll('#repairsTable .rt-row');
+    const items = [];
+    rows.forEach(r => {
+      const desc = r.querySelector('.r-desc').value.trim();
+      const wo   = r.querySelector('.r-wo').value.trim();
+      if (desc) items.push({ desc, wo });
+    });
+    return items;
+  }
+
+  function generateEmail() {
+    const vendorName        = document.getElementById('vendorName').value.trim();
+    const contactName       = document.getElementById('contactName').value.trim();
+    const vendorEmail       = document.getElementById('vendorEmail').value.trim();
+    const requestDate       = document.getElementById('requestDate').value;
+    const originalEta       = document.getElementById('originalEta').value;
+    const extraNotes        = document.getElementById('extraNotes').value.trim();
+    const yourName          = document.getElementById('yourName').value.trim();
+    const storeNum          = document.getElementById('storeNum').value.trim();
+    const storeAddress      = document.getElementById('storeAddress').value.trim();
+    const storeCityStateZip = document.getElementById('storeCityStateZip').value.trim();
+    const repairs           = getRepairs();
+
+    if (!vendorName || !contactName || !yourName || repairs.length === 0) {
+      showToast('⚠️ Fill in Vendor, Contact, Your Name & at least one repair.', '#b45309');
+      return;
+    }
+
+    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    const allWOs  = repairs.map(r => r.wo).filter(Boolean);
+    const woTag   = allWOs.length > 0 ? ` — WO# ${allWOs.join(' / ')}` : '';
+    const subject = `Repair Status & ETA Request${woTag}`;
+
+    const repairBlock = repairs.map(r =>
+      `  • ${r.desc}${r.wo ? '  (Work Order #: ' + r.wo + ')' : ''}`
+    ).join('\n');
+
+    let dateLine = '';
+    if (requestDate) dateLine += `\nThis repair was originally requested on ${fmt(requestDate)}.`;
+    if (originalEta) dateLine += ` At that time, we were given an estimated completion date of ${fmt(originalEta)}.`;
+
+    const statusMap = {
+      no_update:          `To date, we have not received an updated status or ETA on this work.`,
+      waiting_parts:      `We understand that parts may still be pending — could you give us a sense of when those are expected to arrive and when the repair will be completed?`,
+      tech_not_scheduled: `We are still waiting for a technician to be scheduled. Could you let us know when we can expect someone on-site?`,
+      in_progress:        `We know work may already be underway — we just want to make sure we have a clear picture of where things stand and when we can expect completion.`,
+      past_eta:           `We wanted to follow up as the original estimated completion date has now passed and the repair is still outstanding.`
+    };
+    const statusLine = statusMap[currentStatus] || statusMap['no_update'];
+    const notesLine  = extraNotes ? `\nFor additional context: ${extraNotes}` : '';
+
+    let storeLine = '';
+    if (storeNum)          storeLine += `\nTarget ${storeNum}`;
+    if (storeAddress)      storeLine += `\n${storeAddress}`;
+    if (storeCityStateZip) storeLine += `\n${storeCityStateZip}`;
+
+    const body =
+`Hi ${contactName},
+
+Hope you're having a good week! I'm reaching out to check in on the status of the following open repair${repairs.length > 1 ? 's' : ''} at our facility:
+
+${repairBlock}
+${dateLine}
+
+${statusLine}${notesLine}
+
+Could you please provide:
+  1. Current status of the repair
+  2. Updated ETA for completion
+  3. Any parts, access, or approvals you may still need from our end
+
+We appreciate everything your team does and just want to make sure we're staying on top of things on our end as well. Please don't hesitate to reach out if there's anything we can do to help move this along.
+
+Thanks so much — looking forward to hearing from you!
+
+${yourName}
+Property Management Lead${storeLine}
+Target Corporation
+${today}`;
+
+    document.getElementById('emailPlaceholder').style.display = 'none';
+    document.getElementById('emailCard').style.display = 'block';
+    document.getElementById('actionBar').style.display = 'grid';
+    document.getElementById('displayTo').textContent = vendorEmail || contactName + ' <' + vendorName + '>';
+    document.getElementById('displaySubject').textContent = subject;
+    document.getElementById('emailBody').value = body;
+
+    window._subject  = subject;
+    window._toEmail  = vendorEmail;
+
+    // Switch to email tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('tab-email').classList.add('active');
+
+    showToast('✓ Email generated!', '#2E7D32');
+  }
+
+  function copyBody() {
+    const text = document.getElementById('emailBody').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showToast('✓ Email body copied!', '#2E7D32'));
+    } else {
+      // Fallback for older iOS
+      const ta = document.getElementById('emailBody');
+      ta.select();
+      document.execCommand('copy');
+      showToast('✓ Copied!', '#2E7D32');
+    }
+  }
+
+  function copySubjectBody() {
+    const subject = document.getElementById('displaySubject').textContent;
+    const body    = document.getElementById('emailBody').value;
+    const full    = `Subject: ${subject}\n\n${body}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(full).then(() => showToast('✓ Full email copied!', '#2E7D32'));
+    } else {
+      showToast('✓ Use Copy Body instead on this device.', '#2E7D32');
+    }
+  }
+
+  function openMailto() {
+    const to      = window._toEmail || '';
+    const subject = encodeURIComponent(window._subject || '');
+    const body    = encodeURIComponent(document.getElementById('emailBody').value);
+    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  }
+
+  function showToast(msg, bg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = bg || '#2E7D32';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
