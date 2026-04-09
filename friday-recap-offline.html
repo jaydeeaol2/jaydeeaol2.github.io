@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friday Recap Generator | Target PML</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#CC0000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PM Recap">
+<style>
+  /* ── FONTS (embedded base64 fallback stack — no Google Fonts needed) ── */
+  :root {
+    --red: #CC0000;
+    --red-dark: #990000;
+    --white: #ffffff;
+    --off-white: #f7f4f0;
+    --light-gray: #eeebe6;
+    --mid-gray: #c8c2b8;
+    --dark-gray: #3a3530;
+    --charcoal: #1e1a17;
+    --gold: #d4a017;
+    --gold-light: #f0c040;
+    --green: #27ae60;
+    --font-display: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+    --font-body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--charcoal);
+    color: var(--dark-gray);
+    min-height: 100vh;
+  }
+
+  /* ── OFFLINE BADGE ── */
+  .offline-badge {
+    background: var(--green);
+    color: white;
+    text-align: center;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--red);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -60px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: 30%;
+    width: 140px; height: 140px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 50%;
+  }
+  .header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 28px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .bullseye { width: 52px; height: 52px; flex-shrink: 0; }
+  .bullseye svg { width: 100%; height: 100%; }
+  .header-text h1 {
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  .header-text p {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.78);
+    margin-top: 5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .offline-pill {
+    background: rgba(255,255,255,0.18);
+    color: white;
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-top: 6px;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .app-wrapper {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 16px 60px;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    background: var(--charcoal);
+    padding: 20px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .progress-label {
+    font-family: var(--font-display);
+    font-size: 0.58rem;
+    color: var(--mid-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    flex: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .progress-label.active { color: var(--gold-light); }
+  .progress-label.done { color: var(--red); }
+  .progress-track {
+    height: 4px;
+    background: #3a3530;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--gold));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* ── SECTION CARDS ── */
+  .section-card {
+    background: var(--off-white);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 20px;
+    display: none;
+    animation: slideIn 0.35s ease;
+    border-top: 4px solid var(--red);
+  }
+  .section-card.active { display: block; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .section-icon {
+    width: 42px; height: 42px;
+    background: var(--red);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--charcoal);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .section-subtitle {
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── FORM FIELDS ── */
+  .field-group { margin-bottom: 18px; }
+  .field-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--dark-gray);
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .field-group input,
+  .field-group textarea,
+  .field-group select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--light-gray);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--charcoal);
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .field-group input:focus,
+  .field-group textarea:focus,
+  .field-group select:focus {
+    outline: none;
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(204,0,0,0.12);
+  }
+  .field-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
+
+  .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .radio-btn {
+    padding: 8px 16px;
+    border: 1.5px solid var(--mid-gray);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    color: var(--dark-gray);
+    font-family: var(--font-body);
+    font-weight: 600;
+    user-select: none;
+  }
+  .radio-btn.selected { background: var(--red); border-color: var(--red); color: white; }
+
+  /* ── NAV BUTTONS ── */
+  .nav-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    gap: 12px;
+  }
+  .btn {
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--red); color: white; }
+  .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); }
+  .btn-secondary { background: var(--light-gray); color: var(--dark-gray); }
+  .btn-secondary:hover { background: var(--mid-gray); }
+  .btn-generate {
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    color: white;
+    font-size: 0.95rem;
+    padding: 14px 32px;
+    box-shadow: 0 4px 16px rgba(204,0,0,0.35);
+  }
+  .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(204,0,0,0.45); }
+  .step-counter {
+    font-size: 0.75rem;
+    color: var(--mid-gray);
+    font-family: var(--font-display);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── GENERATING ANIMATION ── */
+  #loading-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--off-white);
+    border-radius: 12px;
+    margin-top: 20px;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 4px solid var(--light-gray);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-screen p {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    color: var(--dark-gray);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── EMAIL OUTPUT ── */
+  #output-section { display: none; margin-top: 20px; animation: slideIn 0.4s ease; }
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--red);
+    color: white;
+    padding: 16px 22px;
+    border-radius: 12px 12px 0 0;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .output-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 900;
+  }
+  .output-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-action {
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    background: transparent;
+    color: white;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-action:hover { background: rgba(255,255,255,0.15); }
+  .btn-action.solid { background: white; color: var(--red); border-color: white; }
+  .btn-action.solid:hover { background: var(--off-white); }
+
+  #email-output {
+    background: white;
+    border: 1.5px solid var(--light-gray);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 28px;
+    min-height: 300px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--charcoal);
+    white-space: pre-wrap;
+  }
+  .restart-wrap { text-align: center; margin-top: 20px; }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--charcoal);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.3s ease;
+    z-index: 999;
+    border-left: 4px solid var(--red);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* install banner */
+  #install-banner {
+    display: none;
+    background: #1e1a17;
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  #install-banner span { color: var(--gold-light); font-size: 0.85rem; flex: 1; min-width: 200px; }
+  #install-banner strong { display: block; font-family: var(--font-display); font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .btn-install {
+    padding: 9px 20px;
+    background: var(--gold);
+    color: var(--charcoal);
+    border: none;
+    border-radius: 7px;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-install:hover { background: var(--gold-light); }
+</style>
+</head>
+<body>
+
+<div class="offline-badge">⚡ OFFLINE MODE — Works Without Internet</div>
+
+<header>
+  <div class="header-inner">
+    <div class="bullseye">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="white"/>
+        <circle cx="50" cy="50" r="36" fill="#CC0000"/>
+        <circle cx="50" cy="50" r="20" fill="white"/>
+        <circle cx="50" cy="50" r="10" fill="#CC0000"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Friday Recap Generator</h1>
+      <p>Property Management Lead · Alexandria, LA</p>
+      <span class="offline-pill">📴 No Internet Required</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-wrapper">
+
+  <!-- Install to Home Screen banner -->
+  <div id="install-banner">
+    <span>
+      <strong>📱 Add to Home Screen</strong>
+      Install this app on your phone for instant offline access — no browser needed.
+    </span>
+    <button class="btn-install" id="install-btn">Install App</button>
+    <button class="btn-install" style="background:transparent;color:var(--mid-gray);border:1px solid #3a3530;" onclick="document.getElementById('install-banner').style.display='none'">✕</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-labels">
+      <span class="progress-label active" onclick="goToStep(0)">Basics</span>
+      <span class="progress-label" onclick="goToStep(1)">Work Orders</span>
+      <span class="progress-label" onclick="goToStep(2)">Building</span>
+      <span class="progress-label" onclick="goToStep(3)">Vendors</span>
+      <span class="progress-label" onclick="goToStep(4)">Safety</span>
+      <span class="progress-label" onclick="goToStep(5)">Projects</span>
+      <span class="progress-label" onclick="goToStep(6)">Next Week</span>
+      <span class="progress-label" onclick="goToStep(7)">Team</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+
+  <!-- STEP 0: Basics -->
+  <div class="section-card active" id="step-0">
+    <div class="section-header">
+      <div class="section-icon">📅</div>
+      <div>
+        <div class="section-title">Basic Info</div>
+        <div class="section-subtitle">Week of recap</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label>Your Name</label>
+        <input type="text" id="name" placeholder="e.g. Marcus Johnson" />
+      </div>
+      <div class="field-group">
+        <label>Week Ending Date</label>
+        <input type="date" id="week-date" />
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Overall Week Rating</label>
+      <div class="radio-group" id="week-rating">
+        <span class="radio-btn" onclick="selectRadio(this,'week-rating')">🟢 Strong</span>
+        <span class="radio-btn" onclick="selectRadio(this,'week-rating')">🟡 Solid</span>
+        <span class="radio-btn" onclick="selectRadio(this,'week-rating')">🟠 Challenging</span>
+        <span class="radio-btn" onclick="selectRadio(this,'week-rating')">🔴 Rough</span>
+      </div>
+    </div>
+    <div class="nav-btns">
+      <div class="step-counter">Step 1 of 8</div>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 1: Work Orders -->
+  <div class="section-card" id="step-1">
+    <div class="section-header">
+      <div class="section-icon">🔧</div>
+      <div>
+        <div class="section-title">Work Orders & Maintenance</div>
+        <div class="section-subtitle">This week's WO activity</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label>Work Orders Opened</label>
+        <input type="number" id="wo-opened" placeholder="e.g. 7" min="0" />
+      </div>
+      <div class="field-group">
+        <label>Work Orders Closed</label>
+        <input type="number" id="wo-closed" placeholder="e.g. 5" min="0" />
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Open / Aging Work Orders</label>
+      <textarea id="wo-aging" placeholder="e.g. 2 open WOs — HVAC unit 3 filter pending parts (ETA Mon), exterior door sensor waiting on vendor callback..."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Emergency / Critical Repairs This Week</label>
+      <textarea id="wo-emergency" placeholder="e.g. Walk-in cooler alarm Tuesday — repaired compressor relay, back online within 2 hrs. Or: No emergency repairs."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Preventive Maintenance Completed</label>
+      <textarea id="pm-completed" placeholder="e.g. Monthly HVAC filter checks (all 6 units), weekly restroom inspection, generator PM completed..."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 2 of 8</span>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Building -->
+  <div class="section-card" id="step-2">
+    <div class="section-header">
+      <div class="section-icon">🏢</div>
+      <div>
+        <div class="section-title">Building & Asset Condition</div>
+        <div class="section-subtitle">Systems status and guest impact</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Major Systems Status</label>
+      <div class="radio-group" id="systems-status">
+        <span class="radio-btn" onclick="selectRadio(this,'systems-status')">✅ All Operational</span>
+        <span class="radio-btn" onclick="selectRadio(this,'systems-status')">⚠️ Minor Issues</span>
+        <span class="radio-btn" onclick="selectRadio(this,'systems-status')">🔴 Critical Issues</span>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>System Issues / Details</label>
+      <textarea id="systems-detail" placeholder="e.g. HVAC unit 2 running warm — monitoring, vendor scheduled Tuesday. Or: No issues."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Guest or Team Experience Impacts</label>
+      <textarea id="guest-impact" placeholder="e.g. Entrance door 2 slow close — adjusted same day. Backroom aisle 4 lighting out — replaced. Or: None."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Anything to Escalate to PMBP?</label>
+      <textarea id="pmbp-escalation" placeholder="e.g. Roof drain near loading dock showing blockage signs — may need cleaning before rain season. Or: Nothing to escalate."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 3 of 8</span>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Vendors -->
+  <div class="section-card" id="step-3">
+    <div class="section-header">
+      <div class="section-icon">🤝</div>
+      <div>
+        <div class="section-title">Vendor Management</div>
+        <div class="section-subtitle">On-site visits and performance</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Vendors On-Site & Work Completed</label>
+      <textarea id="vendors-onsite" placeholder="e.g. ABC Refrigeration — quarterly service on walk-ins (passed). XYZ Elevator — annual inspection, cert renewed. Or: No vendors this week."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Vendor Performance Issues / Missed Visits</label>
+      <textarea id="vendor-issues" placeholder="e.g. Lawn care (GreenPro) no-showed Wednesday — rescheduled Monday, flagging for accountability. Or: All vendors performed as expected."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Vendor Follow-Ups Needed Next Week</label>
+      <textarea id="vendor-followup" placeholder="e.g. Waiting on final invoice from ABC Plumbing for last week's sink repair. Or: No follow-ups needed."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 4 of 8</span>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Safety -->
+  <div class="section-card" id="step-4">
+    <div class="section-header">
+      <div class="section-icon">⚠️</div>
+      <div>
+        <div class="section-title">Safety & Compliance</div>
+        <div class="section-subtitle">PPE, LOTO, incidents, standards</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Safety Compliance This Week</label>
+      <div class="radio-group" id="safety-status">
+        <span class="radio-btn" onclick="selectRadio(this,'safety-status')">✅ Full Compliance</span>
+        <span class="radio-btn" onclick="selectRadio(this,'safety-status')">⚠️ Minor Gap</span>
+        <span class="radio-btn" onclick="selectRadio(this,'safety-status')">🔴 Incident Occurred</span>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Incidents, Near-Misses, or Safety Concerns</label>
+      <textarea id="safety-detail" placeholder="e.g. No incidents. All LOTO/Arc Flash procedures followed. PPE used appropriately throughout. Or: describe issues..."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Store Brand / Compliance Notes</label>
+      <textarea id="compliance-notes" placeholder="e.g. Monthly fire extinguisher check complete — all compliant. Exit lighting tested, functional. Or: No compliance concerns."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 5 of 8</span>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Projects -->
+  <div class="section-card" id="step-5">
+    <div class="section-header">
+      <div class="section-icon">🏗️</div>
+      <div>
+        <div class="section-title">Projects & Special Work</div>
+        <div class="section-subtitle">Remodels, sets, and initiatives</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Active Projects — Status Update</label>
+      <textarea id="projects-active" placeholder="e.g. Front-end remodel: 60% complete, on schedule. New seasonal set: completed Tuesday, all fixtures operational. Or: No active projects."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Upcoming Work Other Leaders Should Know About</label>
+      <textarea id="projects-upcoming" placeholder="e.g. Parking lot striping Monday morning — front lot limited 6–9am. Or: Nothing impacting store operations next week."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 6 of 8</span>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 6: Next Week -->
+  <div class="section-card" id="step-6">
+    <div class="section-header">
+      <div class="section-icon">📅</div>
+      <div>
+        <div class="section-title">Looking Ahead</div>
+        <div class="section-subtitle">Next week's priorities</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Top PM Priorities for Next Week</label>
+      <textarea id="next-priorities" placeholder="e.g. 1. Close overdue WO on dock leveler. 2. HVAC unit 3 vendor visit Tue. 3. Begin quarterly lighting audit in backroom."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Scheduled Vendor Visits / PMs Due</label>
+      <textarea id="next-vendors" placeholder="e.g. Pest control — Tuesday. Fire suppression inspection — Thursday. Monthly generator PM due end of week."></textarea>
+    </div>
+    <div class="field-group">
+      <label>What Do You Need from Fellow Leaders?</label>
+      <textarea id="next-needs" placeholder="e.g. Need SD approval on HVAC quote over $500. Need ETL-Log to clear backroom aisle 7 Wednesday for equipment access. Or: No cross-functional needs."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 7 of 8</span>
+      <button class="btn btn-primary" onclick="nextStep()">Next →</button>
+    </div>
+  </div>
+
+  <!-- STEP 7: Team -->
+  <div class="section-card" id="step-7">
+    <div class="section-header">
+      <div class="section-icon">🙌</div>
+      <div>
+        <div class="section-title">Team & Culture</div>
+        <div class="section-subtitle">Wins and recognition</div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Team Member Shoutout (optional)</label>
+      <textarea id="shoutout" placeholder="e.g. Big shoutout to James for staying late to troubleshoot the walk-in cooler alarm — saved us major headache. Or: leave blank."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Week's Biggest Win</label>
+      <textarea id="big-win" placeholder="e.g. Closed 8 WOs this week — highest count in a month. All major systems green heading into weekend."></textarea>
+    </div>
+    <div class="field-group">
+      <label>Anything Else to Include?</label>
+      <textarea id="extra-notes" placeholder="e.g. PM audit in 3 weeks — heads up. Also low on HVAC filter stock, ordering Monday. Or: leave blank."></textarea>
+    </div>
+    <div class="nav-btns">
+      <button class="btn btn-secondary" onclick="prevStep()">← Back</button>
+      <span class="step-counter">Step 8 of 8</span>
+      <button class="btn btn-generate" onclick="generateEmail()">⚡ Generate Recap Email</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p id="loading-msg">Building your recap...</p>
+  </div>
+
+  <!-- Output -->
+  <div id="output-section">
+    <div class="output-header">
+      <div class="output-title">📧 Your Friday Recap Email</div>
+      <div class="output-actions">
+        <button class="btn-action solid" onclick="copyEmail()">📋 Copy</button>
+        <button class="btn-action" onclick="openMailClient()">✉️ Open in Mail</button>
+        <button class="btn-action" onclick="printEmail()">🖨️ Print</button>
+      </div>
+    </div>
+    <div id="email-output"></div>
+    <div class="restart-wrap">
+      <button class="btn btn-secondary" onclick="restartForm()" style="margin-top:16px;">↩ Start New Recap</button>
+    </div>
+  </div>
+
+</div><!-- end app-wrapper -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  APP STATE & NAVIGATION
+// ─────────────────────────────────────────────
+let currentStep = 0;
+const totalSteps = 8;
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('week-date').value = new Date().toISOString().split('T')[0];
+  loadSavedName();
+});
+
+function loadSavedName() {
+  const saved = localStorage.getItem('pml_name');
+  if (saved) document.getElementById('name').value = saved;
+}
+
+function selectRadio(el, groupId) {
+  document.querySelectorAll(`#${groupId} .radio-btn`).forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function getRadioValue(groupId) {
+  const sel = document.querySelector(`#${groupId} .radio-btn.selected`);
+  return sel ? sel.textContent.trim() : '';
+}
+
+function updateProgress() {
+  document.getElementById('progress-fill').style.width = (currentStep / (totalSteps - 1) * 100) + '%';
+  document.querySelectorAll('.progress-label').forEach((el, i) => {
+    el.classList.remove('active', 'done');
+    if (i === currentStep) el.classList.add('active');
+    else if (i < currentStep) el.classList.add('done');
+  });
+}
+
+function goToStep(n) {
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
+  currentStep = n;
+  document.getElementById(`step-${currentStep}`).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function nextStep() { if (currentStep < totalSteps - 1) goToStep(currentStep + 1); }
+function prevStep() { if (currentStep > 0) goToStep(currentStep - 1); }
+
+// ─────────────────────────────────────────────
+//  DATA COLLECTION
+// ─────────────────────────────────────────────
+function val(id) { return (document.getElementById(id).value || '').trim(); }
+
+function collectData() {
+  return {
+    name:            val('name') || 'PML',
+    weekDate:        val('week-date'),
+    weekRating:      getRadioValue('week-rating'),
+    woOpened:        val('wo-opened'),
+    woClosed:        val('wo-closed'),
+    woAging:         val('wo-aging'),
+    woEmergency:     val('wo-emergency'),
+    pmCompleted:     val('pm-completed'),
+    systemsStatus:   getRadioValue('systems-status'),
+    systemsDetail:   val('systems-detail'),
+    guestImpact:     val('guest-impact'),
+    pmbpEscalation:  val('pmbp-escalation'),
+    vendorsOnsite:   val('vendors-onsite'),
+    vendorIssues:    val('vendor-issues'),
+    vendorFollowup:  val('vendor-followup'),
+    safetyStatus:    getRadioValue('safety-status'),
+    safetyDetail:    val('safety-detail'),
+    complianceNotes: val('compliance-notes'),
+    projectsActive:  val('projects-active'),
+    projectsUpcoming:val('projects-upcoming'),
+    nextPriorities:  val('next-priorities'),
+    nextVendors:     val('next-vendors'),
+    nextNeeds:       val('next-needs'),
+    shoutout:        val('shoutout'),
+    bigWin:          val('big-win'),
+    extraNotes:      val('extra-notes'),
+  };
+}
+
+// ─────────────────────────────────────────────
+//  OFFLINE TEMPLATE ENGINE
+// ─────────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return 'this week';
+  try {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+    });
+  } catch(e) { return dateStr; }
+}
+
+function woSummary(d) {
+  const opened = d.woOpened || '—';
+  const closed = d.woClosed || '—';
+  const diff = (parseInt(d.woOpened)||0) - (parseInt(d.woClosed)||0);
+  let trend = '';
+  if (d.woOpened && d.woClosed) {
+    if (diff <= 0) trend = ' We closed more than we opened — solid progress.';
+    else if (diff === 1) trend = ' One WO more opened than closed — on track to clear it next week.';
+    else trend = ` ${diff} more opened than closed — pushing to catch up.`;
+  }
+  return `Work orders this week: ${opened} opened, ${closed} closed.${trend}`;
+}
+
+function systemsSentence(d) {
+  const s = d.systemsStatus;
+  if (!s) return 'Major systems status not noted.';
+  if (s.includes('All Operational')) return 'All major systems — HVAC, refrigeration, electrical, and life safety — are fully operational heading into the weekend.';
+  if (s.includes('Minor')) return 'Major systems are mostly operational with some minor issues to note (see details below).';
+  if (s.includes('Critical')) return 'There are critical system issues that require attention — details below.';
+  return `Systems status: ${s}.`;
+}
+
+function safetySentence(d) {
+  const s = d.safetyStatus;
+  if (!s || s.includes('Full Compliance')) return 'Full safety compliance maintained throughout the week. All LOTO/Arc Flash procedures followed and PPE used appropriately across all tasks.';
+  if (s.includes('Minor Gap')) return 'Minor safety gap noted this week — details and corrective actions below.';
+  if (s.includes('Incident')) return 'A safety incident occurred this week — full details below.';
+  return `Safety status: ${s}.`;
+}
+
+function weekOpener(d) {
+  const r = d.weekRating;
+  const date = formatDate(d.weekDate);
+  const name = d.name;
+  if (r.includes('Strong')) return `Team — great week to close out. Here's the PM recap for the week ending ${date}. Overall it was a strong week across the board.`;
+  if (r.includes('Solid'))  return `Team — wrapping up the week ending ${date} with a solid PM recap for your review.`;
+  if (r.includes('Challenging')) return `Team — here's the PM recap for the week ending ${date}. It was a challenging week, but we stayed on top of the priorities and kept the building running.`;
+  if (r.includes('Rough'))  return `Team — PM recap for the week ending ${date}. Tough week operationally, but we managed through it. Full details below.`;
+  return `Team — here's the PM recap for the week ending ${date}.`;
+}
+
+function buildEmail(d) {
+  const lines = [];
+  const name = d.name;
+  const subjectRating = d.weekRating.includes('Strong') ? '✅ Strong Week' :
+                        d.weekRating.includes('Solid')  ? '✔ Solid Week' :
+                        d.weekRating.includes('Challenging') ? '⚠ Challenging Week' :
+                        d.weekRating.includes('Rough') ? '🔴 Rough Week' : 'Weekly Update';
+  const dateShort = d.weekDate ? new Date(d.weekDate + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+
+  lines.push(`SUBJECT: Friday PM Recap — Week of ${dateShort} | ${subjectRating}`);
+  lines.push('');
+  lines.push(weekOpener(d));
+  lines.push('');
+
+  // WORK ORDERS
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('WORK ORDERS & MAINTENANCE');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push(woSummary(d));
+  lines.push('');
+  if (d.woAging) {
+    lines.push('Open / Aging WOs:');
+    lines.push(d.woAging);
+    lines.push('');
+  }
+  if (d.woEmergency) {
+    lines.push('Emergency / Critical Repairs:');
+    lines.push(d.woEmergency);
+    lines.push('');
+  }
+  if (d.pmCompleted) {
+    lines.push('Preventive Maintenance Completed:');
+    lines.push(d.pmCompleted);
+    lines.push('');
+  }
+
+  // BUILDING
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('BUILDING & ASSET CONDITION');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push(systemsSentence(d));
+  lines.push('');
+  if (d.systemsDetail) {
+    lines.push('Details: ' + d.systemsDetail);
+    lines.push('');
+  }
+  if (d.guestImpact) {
+    lines.push('Guest / Team Impacts:');
+    lines.push(d.guestImpact);
+    lines.push('');
+  }
+  if (d.pmbpEscalation) {
+    lines.push('PMBP Escalation:');
+    lines.push(d.pmbpEscalation);
+    lines.push('');
+  }
+
+  // VENDORS
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('VENDOR MANAGEMENT');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  if (d.vendorsOnsite) {
+    lines.push('On-Site This Week:');
+    lines.push(d.vendorsOnsite);
+    lines.push('');
+  } else {
+    lines.push('No vendor visits this week.');
+    lines.push('');
+  }
+  if (d.vendorIssues) {
+    lines.push('Performance Issues:');
+    lines.push(d.vendorIssues);
+    lines.push('');
+  }
+  if (d.vendorFollowup) {
+    lines.push('Follow-Ups Needed:');
+    lines.push(d.vendorFollowup);
+    lines.push('');
+  }
+
+  // SAFETY
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('SAFETY & COMPLIANCE');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push(safetySentence(d));
+  lines.push('');
+  if (d.safetyDetail && !d.safetyStatus.includes('Full Compliance')) {
+    lines.push(d.safetyDetail);
+    lines.push('');
+  }
+  if (d.complianceNotes) {
+    lines.push('Compliance Notes:');
+    lines.push(d.complianceNotes);
+    lines.push('');
+  }
+
+  // PROJECTS
+  if (d.projectsActive || d.projectsUpcoming) {
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('PROJECTS & SPECIAL WORK');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    if (d.projectsActive) {
+      lines.push('Active Projects:');
+      lines.push(d.projectsActive);
+      lines.push('');
+    }
+    if (d.projectsUpcoming) {
+      lines.push('Heads-Up for Next Week:');
+      lines.push(d.projectsUpcoming);
+      lines.push('');
+    }
+  }
+
+  // NEXT WEEK
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('LOOKING AHEAD — NEXT WEEK');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  if (d.nextPriorities) {
+    lines.push('Top Priorities:');
+    lines.push(d.nextPriorities);
+    lines.push('');
+  }
+  if (d.nextVendors) {
+    lines.push('Scheduled Vendors / PMs Due:');
+    lines.push(d.nextVendors);
+    lines.push('');
+  }
+  if (d.nextNeeds) {
+    lines.push('What I Need from the Team:');
+    lines.push(d.nextNeeds);
+    lines.push('');
+  }
+
+  // TEAM
+  if (d.shoutout || d.bigWin) {
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('TEAM & CULTURE');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    if (d.shoutout) {
+      lines.push('Shoutout:');
+      lines.push(d.shoutout);
+      lines.push('');
+    }
+    if (d.bigWin) {
+      lines.push("This Week's Win:");
+      lines.push(d.bigWin);
+      lines.push('');
+    }
+  }
+
+  if (d.extraNotes) {
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('ADDITIONAL NOTES');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+    lines.push(d.extraNotes);
+    lines.push('');
+  }
+
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push(`Have a great weekend, team. See you Monday.`);
+  lines.push('');
+  lines.push(`${name}`);
+  lines.push('Property Management Lead');
+  lines.push('Target — Alexandria, LA');
+
+  return lines.join('\n');
+}
+
+// ─────────────────────────────────────────────
+//  GENERATE
+// ─────────────────────────────────────────────
+function generateEmail() {
+  const data = collectData();
+
+  // Save name for next time
+  if (data.name !== 'PML') localStorage.setItem('pml_name', data.name);
+
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
+  document.getElementById('loading-screen').style.display = 'block';
+
+  // Small delay for perceived progress
+  const msgs = ['Pulling your work orders...', 'Checking vendor notes...', 'Formatting the recap...', 'Almost done...'];
+  let i = 0;
+  const iv = setInterval(() => {
+    document.getElementById('loading-msg').textContent = msgs[Math.min(i++, msgs.length-1)];
+  }, 300);
+
+  setTimeout(() => {
+    clearInterval(iv);
+    const email = buildEmail(data);
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('email-output').textContent = email;
+    document.getElementById('output-section').style.display = 'block';
+    window.scrollTo({ top: document.getElementById('output-section').offsetTop - 20, behavior: 'smooth' });
+  }, 1200);
+}
+
+// ─────────────────────────────────────────────
+//  OUTPUT ACTIONS
+// ─────────────────────────────────────────────
+function copyEmail() {
+  const text = document.getElementById('email-output').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+  } else {
+    // fallback for older browsers / some mobile
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copied!');
+  }
+}
+
+function openMailClient() {
+  const text = document.getElementById('email-output').textContent;
+  const lines = text.split('\n');
+  let subject = 'Friday PM Recap';
+  let bodyStart = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith('SUBJECT:')) {
+      subject = lines[i].replace('SUBJECT:', '').trim();
+      bodyStart = i + 1;
+      break;
+    }
+  }
+  const body = lines.slice(bodyStart).join('\n').trim();
+  window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function printEmail() {
+  const text = document.getElementById('email-output').textContent;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Friday PM Recap</title><style>body{font-family:Arial,sans-serif;font-size:13px;max-width:680px;margin:40px auto;line-height:1.7;color:#222}pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${text.replace(/</g,'&lt;')}</pre></body></html>`);
+  win.document.close();
+  win.print();
+}
+
+function restartForm() {
+  document.getElementById('output-section').style.display = 'none';
+  goToStep(0);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─────────────────────────────────────────────
+//  PWA — INSTALL TO HOME SCREEN
+// ─────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'flex';
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').style.display = 'none';
+  if (outcome === 'accepted') showToast('App installed! Find it on your home screen.');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  SERVICE WORKER REGISTRATION
+// ─────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
